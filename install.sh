@@ -33,6 +33,7 @@ Usage:
 Options:
   --no-zsh              skip zsh (forwarded to vps-setup.sh)
   --no-tmux             skip tmux (forwarded to vps-setup.sh)
+  --no-tmux-config      skip tmux config (forwarded to vps-setup.sh)
   --no-nvim             skip neovim binary (forwarded to vps-setup.sh)
   --set-shell           chsh default shell to zsh (forwarded to vps-setup.sh)
   --no-nvim-config      skip nvim/vim config (don't run nvim-setup.sh)
@@ -43,13 +44,14 @@ Options:
 
 Env (forwarded):
   NVIM_VERSION, NVIM_INSTALL_DIR, NVIM_BIN_LINK  (vps-setup.sh)
-  BASE_URL, XDG_CONFIG_HOME                       (nvim-setup.sh)
+  BASE_URL, XDG_CONFIG_HOME, TMUX_DEST            (vps-setup.sh / nvim-setup.sh)
 
 Examples:
   ./install.sh
   ./install.sh --no-zsh --set-shell
   ./install.sh --no-vps --nvim-only
   ./install.sh --no-nvim-config
+  ./install.sh --no-tmux-config
 USAGE
   echo ""
   echo "Sub-script help:"
@@ -63,6 +65,7 @@ for arg in "$@"; do
   case "$arg" in
     --no-zsh)         VPS_ARGS+=("$arg") ;;
     --no-tmux)        VPS_ARGS+=("$arg") ;;
+    --no-tmux-config) VPS_ARGS+=("$arg") ;;
     --no-nvim)        VPS_ARGS+=("$arg") ;;
     --set-shell)      VPS_ARGS+=("$arg") ;;
     --no-nvim-config) SKIP_NVIM_CONFIG=1 ;;

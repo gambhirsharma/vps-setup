@@ -9,10 +9,11 @@ Migrated from `gambhir.dev/public/*` (2026-09-02).
 | File | Description |
 |------|-------------|
 | `install.sh` | **Orchestrator** — runs `vps-setup.sh` + `nvim-setup.sh` (what the bootstrap executes) |
-| `vps-setup.sh` | Install `zsh`, `tmux`, `neovim` (official prebuilt binary) |
+| `vps-setup.sh` | Install `zsh`, `tmux`, `neovim` (official prebuilt binary) + `tmux` config |
 | `nvim-setup.sh` | Install minimal nvim/vim config (zero plugins, embedded) |
 | `minimal-init.lua` | Minimal `init.lua` for nvim — ssh/VPS |
 | `minimal-init.vimrc` | Minimal `.vimrc` for vim — ssh/VPS |
+| `minimal-tmux.conf` | Minimal `tmux.conf` for VPS — prefix `C-s`, mouse, vi copy/paste, no plugins |
 
 ## Quick start — fresh VPS
 
@@ -69,10 +70,13 @@ NVIM_VERSION=0.11.0 ./vps-setup.sh
 # from this repo
 nvim -u ./minimal-init.lua
 vim -u ./minimal-init.vimrc
+tmux -f ./minimal-tmux.conf
+cp ./minimal-tmux.conf ~/.tmux.conf && tmux source ~/.tmux.conf
 
 # from raw github
 curl -fsSL https://raw.githubusercontent.com/gambhirsharma/vps-setup/main/minimal-init.lua -o ~/.config/nvim/init.lua
 curl -fsSL https://raw.githubusercontent.com/gambhirsharma/vps-setup/main/minimal-init.vimrc -o ~/.vimrc
+curl -fsSL https://raw.githubusercontent.com/gambhirsharma/vps-setup/main/minimal-tmux.conf -o ~/.tmux.conf
 ```
 
 ## What each script does
@@ -80,6 +84,12 @@ curl -fsSL https://raw.githubusercontent.com/gambhirsharma/vps-setup/main/minima
 **`vps-setup.sh`** — `zsh`/`tmux` via package manager, `nvim` via official GitHub release binary:
 - `https://github.com/neovim/neovim/releases/download/v$NVIM_VERSION/nvim-linux-<arch>.tar.gz`
 - `x86_64` and `arm64` supported, extracted to `/opt/nvim-$VERSION`, symlinked to `/usr/local/bin/nvim`
+- also installs `minimal-tmux.conf` → `~/.tmux.conf` (and `/tmp/minimal-tmux.conf` for `tmux -f /tmp/minimal-tmux.conf`)
+  - prefix `C-s` (not `C-b`), `mouse on`, `status top`, `base-index 1`, `renumber-windows on`
+  - `vi` copy: `v` begin, `C-v` block, `y` yank, mouse drag → copy; `prefix+p` paste
+  - splits keep cwd: `prefix+|` / `prefix+-` (also `"`/`%`), `hjkl` pane nav, `prefix+r` reload, `prefix+a` toggle status
+  - true-color, `set-clipboard on` (OSC 52 over SSH)
+  - no plugins (vs your local `~/.tmux.conf` which has `tpm`, `catppuccin`, `floax`, `resurrect`)
 
 **`nvim-setup.sh`** — zero-plugin sane defaults for SSH:
 - `nvim` → `$XDG_CONFIG_HOME/nvim/init.lua` (`~/.config/nvim/init.lua`)
