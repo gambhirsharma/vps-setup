@@ -1,0 +1,229 @@
+# minimal-zshrc — ssh/VPS, zero framework, only sane defaults
+# source: https://github.com/gambhirsharma/vps-setup
+# install: cp minimal-zshrc ~/.zshrc && exec zsh
+#     or:  zsh  # (uses ~/.zshrc)
+# notes: plugins are auto-cloned to ~/.zsh/ by vps-setup.sh
+
+# ── early exit for non-interactive ───────────────────────────────────
+[[ $- != *i* ]] && return
+
+# ── XDG / cache ──────────────────────────────────────────────────────
+[[ -z "${XDG_CACHE_HOME:-}" ]] && XDG_CACHE_HOME="$HOME/.cache"
+[[ -z "${XDG_DATA_HOME:-}" ]] && XDG_DATA_HOME="$HOME/.local/share"
+mkdir -p "$XDG_CACHE_HOME/zsh" 2>/dev/null
+
+# ── history ──────────────────────────────────────────────────────────
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=50000
+SAVEHIST=50000
+setopt HIST_EXPIRE_DUPS_FIRST
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_IGNORE_SPACE
+setopt HIST_FIND_NO_DUPS
+setopt HIST_SAVE_NO_DUPS
+setopt HIST_REDUCE_BLANKS
+setopt SHARE_HISTORY
+setopt INC_APPEND_HISTORY
+setopt EXTENDED_HISTORY
+# don't record dup consecutively: HIST_IGNORE_DUPS already, but also:
+setopt HIST_FIND_NO_DUPS
+
+# ── general options ──────────────────────────────────────────────────
+setopt AUTO_CD
+setopt AUTO_PUSHD
+setopt PUSHD_IGNORE_DUPS
+setopt PUSHD_SILENT
+setopt INTERACTIVE_COMMENTS
+setopt NO_BEEP
+setopt NO_CASE_GLOB
+setopt EXTENDED_GLOB
+setopt GLOB_DOTS
+unsetopt FLOW_CONTROL
+
+# ── completion ───────────────────────────────────────────────────────
+autoload -Uz compinit
+# only regenerate compdump once a day
+if [[ -n "$XDG_CACHE_HOME/zsh/zcompdump(#qN.mh+24)" ]]; then
+  compinit -d "$XDG_CACHE_HOME/zsh/zcompdump"
+else
+  compinit -C -d "$XDG_CACHE_HOME/zsh/zcompdump"
+fi
+# case-insensitive, partial word, substring
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
+zstyle ':completion:*' menu select
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
+zstyle ':completion:*' rehash true
+zstyle ':completion:*' completer _complete _match _approximate
+zstyle ':completion:*:approximate:*' max-errors 1 numeric
+zstyle ':completion:*' squeeze-slashes true
+# kill completion
+zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#)*=0=01;31'
+zstyle ':completion:*:kill:*' command 'ps -u $USER -o pid,%cpu,tty,cputime,cmd'
+# cache
+zstyle ':completion:*' use-cache on
+zstyle ':completion:*' cache-path "$XDG_CACHE_HOME/zsh/zcompcache"
+
+# ── keybindings (emacs) ──────────────────────────────────────────────
+bindkey -e
+# history search with prefix (type prefix then up/down)
+autoload -Uz up-line-or-beginning-search down-line-or-beginning-search
+zle -N up-line-or-beginning-search
+zle -N down-line-or-beginning-search
+bindkey '^[[A' up-line-or-beginning-search   # Up
+bindkey '^[[B' down-line-or-beginning-search # Down
+bindkey '^p' up-line-or-beginning-search
+bindkey '^n' down-line-or-beginning-search
+# home/end, delete
+bindkey '^[[H' beginning-of-line
+bindkey '^[[F' end-of-line
+bindkey '^[[3~' delete-char
+bindkey '^[[1;5C' forward-word   # Ctrl+Right
+bindkey '^[[1;5D' backward-word  # Ctrl+Left
+# edit command line
+autoload -Uz edit-command-line
+zle -N edit-command-line
+bindkey '^xe' edit-command-line
+bindkey '^x^e' edit-command-line
+
+# ── plugins: autosuggestions + syntax-highlighting ───────────────────
+# installed by vps-setup.sh to ~/.zsh/ (or $ZSH_PLUGINS_DIR)
+# autosuggestions: fish-like ghost text from history (→ to accept)
+: "${ZSH_PLUGINS_DIR:=$HOME/.zsh}"
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
+ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+ZSH_AUTOSUGGEST_USE_ASYNC=1
+# accept suggestion: Right → or Ctrl-F or End
+# (Right arrow is bound by the plugin to forward-char/accept if at eol)
+if [[ -f "$ZSH_PLUGINS_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
+  source "$ZSH_PLUGINS_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
+  bindkey '^f' autosuggest-accept       # Ctrl-F accept
+  bindkey '^e' autosuggest-accept       # Ctrl-E accept (end)
+  bindkey '^[[C' forward-char           # Right arrow (also works)
+elif [[ -f "$HOME/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
+  source "$HOME/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh"
+  bindkey '^f' autosuggest-accept
+  bindkey '^e' autosuggest-accept
+  bindkey '^[[C' forward-char
+fi
+# syntax highlighting (must be last)
+if [[ -f "$ZSH_PLUGINS_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]]; then
+  source "$ZSH_PLUGINS_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+elif [[ -f "$HOME/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]]; then
+  source "$HOME/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+fi
+# optional: completions collection
+if [[ -f "$ZSH_PLUGINS_DIR/zsh-completions/zsh-completions.plugin.zsh" ]]; then
+  fpath=("$ZSH_PLUGINS_DIR/zsh-completions/src" $fpath)
+elif [[ -f "$HOME/.zsh/zsh-completions/zsh-completions.plugin.zsh" ]]; then
+  fpath=("$HOME/.zsh/zsh-completions/src" $fpath)
+fi
+
+# ── colors / ls ──────────────────────────────────────────────────────
+autoload -Uz colors && colors
+export CLICOLOR=1
+if ls --color=auto >/dev/null 2>&1; then
+  alias ls='ls --color=auto -F'
+  alias ll='ls --color=auto -lAhF'
+else
+  alias ls='ls -G -F'
+  alias ll='ls -G -lAhF'
+fi
+alias la='ls -A'
+alias l='ls -CF'
+alias grep='grep --color=auto'
+alias egrep='egrep --color=auto'
+alias fgrep='fgrep --color=auto'
+# safety
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+# nvim shortcuts
+alias ks='nvim'
+alias vim='nvim'
+alias vi='nvim'
+alias v='nvim'
+
+# ── prompt: two-line, shows cwd + git + status ───────────────────────
+# line 1: ┌─ [user@host] [cwd] [git:branch] [venv] [time]
+# line 2: └─ ❯  (green on success, red on failure)
+autoload -Uz vcs_info
+zstyle ':vcs_info:*' enable git
+zstyle ':vcs_info:git*' check-for-changes true
+zstyle ':vcs_info:git*' stagedstr '%F{green}●%f'
+zstyle ':vcs_info:git*' unstagedstr '%F{yellow}●%f'
+zstyle ':vcs_info:git*' formats ' %F{magenta} %b%f%c%u'
+zstyle ':vcs_info:git*' actionformats ' %F{magenta} %b|%a%f%c%u'
+# faster git check: don't check untracked if slow (optional)
+# zstyle ':vcs_info:git*' check-for-changes false
+
+precmd() {
+  vcs_info
+  # window title
+  print -Pn "\e]0;%n@%m: %~\a"
+}
+
+# show python venv / conda
+_venv_info() {
+  if [[ -n "$VIRTUAL_ENV" ]]; then
+    echo " %F{cyan}(${VIRTUAL_ENV:t})%f"
+  elif [[ -n "$CONDA_DEFAULT_ENV" && "$CONDA_DEFAULT_ENV" != "base" ]]; then
+    echo " %F{cyan}($CONDA_DEFAULT_ENV)%f"
+  fi
+}
+
+# allow prompt substitution
+setopt PROMPT_SUBST
+
+# first line: box + user@host + dir + git + venv + exit code (if failed)
+# second line: prompt char
+PROMPT='
+%F{cyan}┌─%f %F{green}%n@%m%f %F{blue}%~%f${vcs_info_msg_0_}$(_venv_info) %(?.%F{8}.%F{red}✘ %?%f)
+%F{cyan}└─%f %(?.%F{magenta}.%F{red})❯%f '
+
+# right prompt: time (dim)
+RPROMPT='%F{8}%*%f'
+
+# shorter prompt for root
+if [[ $UID -eq 0 ]]; then
+  PROMPT='
+%F{cyan}┌─%f %F{red}%n@%m%f %F{blue}%~%f${vcs_info_msg_0_}$(_venv_info) %(?.%F{8}.%F{red}✘ %?%f)
+%F{cyan}└─%f %F{red}#%f '
+fi
+
+# ── terminal title + emacs tramp fix ─────────────────────────────────
+# (avoid breaking tramp)
+[[ $TERM == "dumb" ]] && unsetopt zle && PS1='$ ' && return
+
+# ── better history search with fzf if available (optional) ────────────
+if command -v fzf >/dev/null 2>&1; then
+  # Ctrl-R: fzf history
+  fzf-history-widget() {
+    local selected
+    selected=$(fc -rl 1 | awk '{ cmd=$0; sub(/^[ ]*[0-9]*[ ]*/, "", cmd); if (!seen[cmd]++) print $0 }' | fzf --query="$LBUFFER" --height=40% --reverse --tac | sed 's/^[ ]*[0-9]*[ ]*//')
+    if [[ -n "$selected" ]]; then
+      LBUFFER="$selected"
+      CURSOR=$#LBUFFER
+    fi
+    zle redisplay
+  }
+  zle -N fzf-history-widget
+  bindkey '^R' fzf-history-widget
+fi
+
+# ── load local overrides ─────────────────────────────────────────────
+[[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
+
+# ── helpful env ──────────────────────────────────────────────────────
+export EDITOR="${EDITOR:-nvim}"
+export VISUAL="$EDITOR"
+# reduce delay for vi mode if switched later
+export KEYTIMEOUT=1
+# pagers
+export LESS='-R'
+# ensure ~/.local/bin on path
+[[ -d "$HOME/.local/bin" ]] && [[ ":$PATH:" != *":$HOME/.local/bin:"* ]] && export PATH="$HOME/.local/bin:$PATH"
+
+# ── done ─────────────────────────────────────────────────────────────
+# tip: ghost suggestion from history appears in gray → press → or Ctrl-F to accept
+#      prompt is two lines: top shows user@host, cwd, git branch, time; bottom is input
