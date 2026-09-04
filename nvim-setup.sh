@@ -124,7 +124,7 @@ vim.opt.termguicolors = true
 vim.opt.scrolloff = 10
 vim.opt.hlsearch = true
 vim.opt.background = "dark"
-pcall(vim.cmd, "colorscheme slate")
+pcall(vim.cmd, "colorscheme default")
 vim.opt.tabstop = 4
 vim.opt.shiftwidth = 4
 vim.opt.expandtab = true
@@ -210,9 +210,9 @@ set list
 set listchars=tab:»\ ,trail:·,nbsp:␣
 set cursorline
 set termguicolors
-set background=dark
-silent! colorscheme slate
 set scrolloff=10
+set background=dark
+silent! colorscheme default
 set hlsearch
 set tabstop=4
 set shiftwidth=4

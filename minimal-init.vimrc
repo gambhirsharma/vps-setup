@@ -27,7 +27,7 @@ set cursorline
 set termguicolors
 set scrolloff=10
 set background=dark
-silent! colorscheme slate
+silent! colorscheme default
 set hlsearch
 set tabstop=4
 set shiftwidth=4
