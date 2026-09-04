@@ -244,6 +244,16 @@ write_embedded_zshrc() {
 # ── early exit for non-interactive ───────────────────────────────────
 [[ $- != *i* ]] && return
 
+# ── TERM fallback ──────────────────────────────────────────────────────
+# modern local terminals (Ghostty, kitty, WezTerm, ...) send a TERM value
+# whose terminfo entry often isn't installed on a fresh/minimal remote host,
+# breaking ncurses tools (tmux, clear, less, ...) with errors like
+# "unknown terminal type" or "missing or unsuitable terminal". fall back to
+# a widely-available entry instead.
+if [[ -n "$TERM" ]] && ! infocmp "$TERM" >/dev/null 2>&1; then
+  export TERM=xterm-256color
+fi
+
 # ── XDG / cache ──────────────────────────────────────────────────────
 [[ -z "${XDG_CACHE_HOME:-}" ]] && XDG_CACHE_HOME="$HOME/.cache"
 [[ -z "${XDG_DATA_HOME:-}" ]] && XDG_DATA_HOME="$HOME/.local/share"
